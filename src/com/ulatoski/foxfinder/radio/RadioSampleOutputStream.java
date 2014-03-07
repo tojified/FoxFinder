@@ -1,5 +1,6 @@
 package com.ulatoski.foxfinder.radio;
 
+import com.ulatoski.foxfinder.model.RadioButton;
 import com.ulatoski.foxfinder.model.RadioSample;
 
 import java.io.*;
@@ -31,6 +32,10 @@ public class RadioSampleOutputStream extends DataOutputStream {
         stream.write(0);
         stream.write(0);
 
+    }
+
+    public void writeRadioButton(RadioButton button) throws IOException {
+        stream.write(button.getValue());
     }
 
 }
