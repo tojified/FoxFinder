@@ -30,7 +30,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.ulatoski.foxfinder.R;
 import com.ulatoski.foxfinder.model.RadioSample;
-import com.ulatoski.foxfinder.radio.EmulatedRadio;
+import com.ulatoski.foxfinder.radio.emulated.EmulatedRadio;
 import com.ulatoski.foxfinder.radio.RadioHandlerThread;
 
 public class FoxFinderActivity extends Activity {

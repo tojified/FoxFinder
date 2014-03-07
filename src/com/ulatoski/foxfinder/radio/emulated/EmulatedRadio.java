@@ -9,12 +9,13 @@
  * of the license agreement you entered into with Samsung Electronics.
  ********************************************************************************
  */
-package com.ulatoski.foxfinder.radio;
+package com.ulatoski.foxfinder.radio.emulated;
 
 import java.io.IOException;
 
 import android.os.Environment;
 import android.os.Handler;
+import com.ulatoski.foxfinder.radio.RadioHandlerThread;
 
 /**
  * Client side handler thread.

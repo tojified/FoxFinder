@@ -1,6 +1,4 @@
-package com.ulatoski.foxfinder.radio;
-
-import android.os.Environment;
+package com.ulatoski.foxfinder.radio.emulated;
 
 import java.io.*;
 import java.net.Socket;
