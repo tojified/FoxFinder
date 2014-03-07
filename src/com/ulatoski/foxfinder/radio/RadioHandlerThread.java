@@ -11,7 +11,6 @@
  */
 package com.ulatoski.foxfinder.radio;
 
-import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
@@ -49,7 +48,7 @@ public class RadioHandlerThread extends HandlerThread {
 
     EmulatedBluetoothSocket socket;
 
-	private RadioSampleInputStream inputStream;
+	private RadioInputStream inputStream;
 
 	public RadioHandlerThread(String name, Handler uiHandler) {
 		super(name);
@@ -96,7 +95,7 @@ public class RadioHandlerThread extends HandlerThread {
 
 	private void onInitializeStreams() {
 		try {
-			inputStream = new RadioSampleInputStream(socket.getInputStream());
+			inputStream = new RadioInputStream(socket.getInputStream());
 		} catch (Exception e) {
 			close(inputStream);
 			onError(e.getMessage());

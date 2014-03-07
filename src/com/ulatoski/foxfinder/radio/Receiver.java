@@ -23,7 +23,7 @@ import com.ulatoski.foxfinder.model.RadioSample;
  */
 public class Receiver implements Runnable {
 
-	private final RadioSampleInputStream radioSampleInputStream;
+	private final RadioInputStream radioInputStream;
 	private final Handler mUiHandler;
 
 	/**
@@ -34,8 +34,8 @@ public class Receiver implements Runnable {
 	 * @param uiHandler
 	 *            UI thread handler
 	 */
-	Receiver(RadioSampleInputStream inputStream, Handler uiHandler) {
-        radioSampleInputStream = inputStream;
+	Receiver(RadioInputStream inputStream, Handler uiHandler) {
+        radioInputStream = inputStream;
 		mUiHandler = uiHandler;
 	}
 
@@ -45,7 +45,7 @@ public class Receiver implements Runnable {
 			final RadioSample sample;
 
 			try {
-				sample = radioSampleInputStream.readRadioSample();
+				sample = radioInputStream.readRadioSample();
 			    if (sample == null) { onDisconnect("Disconnected!"); return; }
             } catch (IOException e) {
 				onError(e.getMessage());

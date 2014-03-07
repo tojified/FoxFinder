@@ -5,11 +5,11 @@ import com.ulatoski.foxfinder.model.RadioSample;
 
 import java.io.*;
 
-public class RadioSampleOutputStream extends DataOutputStream {
+public class RadioOutputStream extends DataOutputStream {
 
     private OutputStream stream;
 
-    public RadioSampleOutputStream(OutputStream output) throws StreamCorruptedException, IOException {
+    public RadioOutputStream(OutputStream output) throws StreamCorruptedException, IOException {
         super(output);
         stream = output;
     }
