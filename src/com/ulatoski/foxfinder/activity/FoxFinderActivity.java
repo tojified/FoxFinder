@@ -34,6 +34,7 @@ public class FoxFinderActivity extends Activity {
     private boolean mDisconnect;
 
     private List<RadioSample> mSamples = new ArrayList<RadioSample>();
+    private List<List> patternHistory = new ArrayList<List>();
 
 	private final Handler.Callback mCallback = new Handler.Callback() {
 
@@ -94,31 +95,32 @@ public class FoxFinderActivity extends Activity {
 		super.onBackPressed();
 	}
 
-
+    @SuppressWarnings("unchecked")
 	private void receiveSample(RadioSample sample) {
-        if (mSamples.size() > 1) {
+
+        if (patternHistory.size() > 0) {
             AntennaPatternView view = (AntennaPatternView) (findViewById(R.id.antenna_pattern));
-            view.setAntennaPattern(getPatternData(mSamples)); //draw previous rotation
+            float[] patternData = getPatternData(mSamples, patternHistory.get(patternHistory.size()-1));
+            view.setAntennaPattern(patternData, 0xFF); //draw previous rotation
         }
         if (sample.isFirstSample()) {
+            if (!mSamples.isEmpty()) patternHistory.add(mSamples);
             mSamples = new ArrayList<RadioSample>(); //new rotation
         }
         mSamples.add(sample);
 	}
 
-    private float[] getPatternData(List<RadioSample> samples) {
-        float[] data = new float[samples.size()];
-        int idx = 0;
-        for (RadioSample sample: samples) {
+    private float[] getPatternData(List<RadioSample> samples, List<RadioSample> lastRotation) {
+        int count = samples.size();
+        float[] data = count > lastRotation.size() ? new float[count] : new float[lastRotation.size()];
+        for (int i = 0; i < data.length; i++) {
+            RadioSample sample = i < count ? samples.get(i) : lastRotation.get(i);  //get the new if available
             if (sample.isQuality()) {
-                data[idx] = (float) sample.getSMeter()/12;
-            } else if (idx > 0) {
-                Log.w("RadioSample", "Bad data received! Freq:" + sample.getFrequency() + ", sMtr:" + sample.getSMeter());
-                data[idx] = data[idx-1];
+                data[i] = (float) sample.getSMeter()/12;
             } else {
-                Log.w("RadioSample", "Bad first sample! Freq:" + sample.getFrequency() + ", sMtr:" + sample.getSMeter());
+                data[i] = (float) lastRotation.get(i).getSMeter()/12;
+                Log.w("RadioSample", "Bad data received! Freq:" + sample.getFrequency() + ", sMtr:" + sample.getSMeter());
             }
-            idx++;
         }
         return data;
     }
