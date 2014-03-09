@@ -17,27 +17,26 @@ import java.util.List;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.*;
+import android.graphics.*;
+import android.graphics.drawable.Drawable;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 import com.ulatoski.foxfinder.R;
 import com.ulatoski.foxfinder.model.RadioSample;
-import com.ulatoski.foxfinder.radio.emulated.EmulatedRadio;
+import com.ulatoski.foxfinder.radio.EmulatedRadio;
 import com.ulatoski.foxfinder.radio.RadioHandlerThread;
 
 public class FoxFinderActivity extends Activity {
 
-    private MessageAdapter messageAdapter;
 	private RadioHandlerThread handlerThread;
     private boolean mDisconnect;
+
+    private List<RadioSample> mSamples = new ArrayList<RadioSample>();
 
 	private final Handler.Callback mCallback = new Handler.Callback() {
 
@@ -76,20 +75,16 @@ public class FoxFinderActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-        setContentView(R.layout.chat_activity);
-        ListView mListView = (ListView) findViewById(R.id.chat_activity_messages);
+        setContentView(R.layout.fox_finder_activity);
 
         Handler mUiHandler = new Handler(mCallback);
-
-        messageAdapter = new MessageAdapter(this);
-        mListView.setAdapter(messageAdapter);
 
         handlerThread = new EmulatedRadio(mUiHandler);
 		handlerThread.start();
 		registerReceiver(broadcastReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
 	}
 
-	@Override
+    @Override
 	protected void onDestroy() {
 		unregisterReceiver(broadcastReceiver);
 		handlerThread.quit();
@@ -102,80 +97,22 @@ public class FoxFinderActivity extends Activity {
 		super.onBackPressed();
 	}
 
-	/**
-	 * Called when chat message has been received. Adds the message to the {@link MessageAdapter} adapter.
-	 * 
-	 * @param sample
-	 *            {@link RadioSample}
-	 */
+
 	private void receiveSample(RadioSample sample) {
-		messageAdapter.addMessage(sample);
+		if (sample.isFirstSample()) {
+            AntennaPatternView view = (AntennaPatternView) (findViewById(R.id.antenna_pattern));
+            view.setAntennaPattern(getPatternData(mSamples)); //draw previous rotation
+            mSamples = new ArrayList<RadioSample>(); //new rotation
+        }
+        mSamples.add(sample);
 	}
 
-	/**
-	 * Adapter for the list view. Holds the chat messages.
-	 */
-	private static class MessageAdapter extends BaseAdapter {
-
-		private static final int MAX_CHAT_MESSAGES_COUNT = 40;
-
-		private final List<RadioSample> mMessages;
-		private final Context mContext;
-
-		public MessageAdapter(Context context) {
-			super();
-			mContext = context;
-			mMessages = new ArrayList<RadioSample>(MAX_CHAT_MESSAGES_COUNT);
-		}
-
-		/**
-		 * Adds chat message at the end. If the {@link MessageAdapter#MAX_CHAT_MESSAGES_COUNT} limit has been reached
-		 * removes first element.
-		 * 
-		 * @param message
-		 *            {@link com.ulatoski.foxfinder.model.RadioSample}
-		 */
-		public void addMessage(RadioSample message) {
-			if (mMessages.size() >= MAX_CHAT_MESSAGES_COUNT) {
-				mMessages.remove(0);
-				notifyDataSetChanged();
-			}
-			mMessages.add(message);
-			notifyDataSetChanged();
-		}
-
-		@Override
-		public int getCount() {
-			return mMessages.size();
-		}
-
-		@Override
-		public RadioSample getItem(int position) {
-			return mMessages.get(position);
-		}
-
-		@Override
-		public long getItemId(int position) {
-			return position;
-		}
-
-		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			RadioSample sample = getItem(position);
-
-			int layoutId;
-			if (!sample.isFirstSample()) {
-				layoutId = R.layout.message_view;
-			} else {
-				layoutId = R.layout.stranger_message_view;
-			}
-
-			convertView = View.inflate(mContext, layoutId, null);
-			TextView text = (TextView) convertView.findViewById(R.id.message_view_message);
-			text.setText(sample.getFrequency() + " : S"+sample.getSMeter() + " : " + sample.isFirstSample());
-			return convertView;
-		}
-	}
+    private float[] getPatternData(List<RadioSample> samples) {
+        float[] data = new float[samples.size()];
+        int idx = 0;
+        for (RadioSample sample: samples) {data[idx++] = (float) sample.getSMeter()/16;}
+        return data;
+    }
 
 	/**
 	 * Shows toast with the error message and finishes {@link RadioSample}.

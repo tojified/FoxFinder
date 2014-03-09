@@ -1,0 +1,80 @@
+package com.ulatoski.foxfinder.activity;
+
+import android.content.Context;
+import android.graphics.*;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.View;
+import com.ulatoski.foxfinder.model.RadioSample;
+
+import java.util.List;
+
+/**
+ * Created by tojified on 3/8/14.
+ */
+public class AntennaPatternView extends View {
+
+    Paint mPaint;
+    Path mPath;
+
+    public AntennaPatternView(Context context) {
+        super(context);
+        mPaint = createPaint();
+    }
+
+    public AntennaPatternView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        mPaint = createPaint();
+    }
+
+    public AntennaPatternView(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        mPaint = createPaint();
+    }
+
+    private Paint createPaint() {
+        return new Paint() {
+            {
+                setColor(Color.WHITE);
+                setStyle(Style.STROKE);
+                setStrokeCap(Cap.ROUND);
+                setStrokeWidth(3.0f);
+                setAntiAlias(true);
+            }
+        };
+    }
+
+    @Override
+    public void onDraw(Canvas canvas) {
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        if (mPath != null) canvas.drawPath(mPath, mPaint);  //clear canvas
+    }
+
+    public void setAntennaPattern(float[] data) {  //data includes radius value between 0 and 1 for polar graph
+        double interval = Math.toRadians(360) / data.length; //evenly spaced on polar grid
+        int w = getWidth();
+        int h = getHeight();
+        int s = (w < h) ? w : h; //scale for smaller dimension
+
+        mPath = new Path();
+        mPath.moveTo(getX(data[data.length-1] * s, interval * (data.length-1)) + w/2,
+                     getY(data[data.length-1] * s, interval * (data.length-1)) + h/2);
+        for (int i = 0; i < data.length; i++) {
+            float x = getX(data[i] * s, interval * i);
+            float y = getY(data[i] * s, interval * i);
+            mPath.lineTo(x + w/2, y + h/2);
+        }
+        invalidate();
+    }
+
+    //r * cos(theta)
+    private float getX(float radius, double radians) {
+        return (float) (radius * Math.cos(radians));
+    }
+
+    //r * sin(theta)
+    private float getY(float radius, double radians) {
+        return (float) (radius * Math.sin(radians));
+    }
+
+}
