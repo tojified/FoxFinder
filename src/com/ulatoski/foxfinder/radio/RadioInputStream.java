@@ -45,11 +45,7 @@ public class RadioInputStream extends DataInputStream {
             int sMtr = stream.read();
             if (sMtr > 0x40) sMtr = sMtr - 0x40;
 
-            try {
-                return new RadioSample(freq.toString(), sMtr, indexByte == 0xF0);
-            } catch (IllegalArgumentException ex) {
-                Log.e("RadioSample", "Bad data received! Freq:" + freq.toString() + ", sMtr:" + sMtr);
-            }
+            return new RadioSample(freq.toString(), sMtr, indexByte == 0xF0);
         }
         return null;
     }

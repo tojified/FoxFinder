@@ -107,7 +107,17 @@ public class FoxFinderActivity extends Activity {
     private float[] getPatternData(List<RadioSample> samples) {
         float[] data = new float[samples.size()];
         int idx = 0;
-        for (RadioSample sample: samples) {data[idx++] = (float) sample.getSMeter()/12;}
+        for (RadioSample sample: samples) {
+            if (sample.isQuality()) {
+                data[idx] = (float) sample.getSMeter()/12;
+            } else if (idx > 0) {
+                Log.w("RadioSample", "Bad data received! Freq:" + sample.getFrequency() + ", sMtr:" + sample.getSMeter());
+                data[idx] = data[idx-1];
+            } else {
+                Log.w("RadioSample", "Bad first sample! Freq:" + sample.getFrequency() + ", sMtr:" + sample.getSMeter());
+            }
+            idx++;
+        }
         return data;
     }
 

@@ -5,6 +5,7 @@ public class RadioSample {
     private String frequency = "";
     private int sMeter = 0;
     private boolean firstSample = true;
+    private boolean badData = false;
 
     /**
      * This constructor requires all fields
@@ -28,20 +29,20 @@ public class RadioSample {
         return frequency;
     }
 
-    public int getSMeter() {
-        return sMeter;
-    }
+    public int getSMeter() { return sMeter; }
 
     public boolean isFirstSample() {
         return firstSample;
     }
 
+    public boolean isQuality() { return !badData; }
+
     private void verify(String frequency) throws IllegalArgumentException {
-        if (!frequency.matches("\\d{3}\\.\\d{3}")) throw new IllegalArgumentException("Frequency must be ###.###");
+        if (!frequency.matches("\\d{3}\\.\\d{3}")) badData = true;
     }
 
     private void verify(int sMeter) throws IllegalArgumentException {
-        if (sMeter < 0 || sMeter > 16) throw new IllegalArgumentException("Illegal S-Meter value.");
+        if (sMeter < 0 || sMeter > 16) badData = true;
     }
 
 }
