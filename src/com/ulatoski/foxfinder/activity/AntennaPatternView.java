@@ -12,7 +12,7 @@ public class AntennaPatternView extends View {
 
     Paint mPaint;
     Path mPath;
-    float mLineWidth = 3.0f;
+    float mLineWidth = 5.0f;
 
     public AntennaPatternView(Context context) {
         super(context);
