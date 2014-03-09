@@ -96,9 +96,11 @@ public class FoxFinderActivity extends Activity {
 
 
 	private void receiveSample(RadioSample sample) {
-		if (sample.isFirstSample()) {
+        if (mSamples.size() > 1) {
             AntennaPatternView view = (AntennaPatternView) (findViewById(R.id.antenna_pattern));
             view.setAntennaPattern(getPatternData(mSamples)); //draw previous rotation
+        }
+        if (sample.isFirstSample()) {
             mSamples = new ArrayList<RadioSample>(); //new rotation
         }
         mSamples.add(sample);
