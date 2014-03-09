@@ -47,13 +47,12 @@ public class AntennaPatternView extends View {
         if (mPath != null) canvas.drawPath(mPath, mPaint);  //clear canvas
     }
 
-    public void setAntennaPattern(float[] data, int alpha) {  //data includes radius value between 0 and 1 for polar graph
+    public void setAntennaPattern(float[] data) {  //data includes radius value between 0 and 1 for polar graph
         double interval = Math.toRadians(360) / data.length; //evenly spaced on polar grid
         int w = ( getWidth() - (int)mLineWidth ) / 2;
         int h = ( getHeight() - (int)mLineWidth ) / 2;
         int s = ( w < h ) ? w : h; //scale for smaller dimension
 
-        mPaint.setAlpha(alpha);
         mPath.reset();
         mPath.moveTo(getX(data[data.length-1] * s, interval * (data.length-1)) + w,
                      getY(data[data.length-1] * s, interval * (data.length-1)) + h);
@@ -63,10 +62,6 @@ public class AntennaPatternView extends View {
             mPath.lineTo(x + w, y + h);
         }
         invalidate();
-    }
-
-    public void setAntennaPattern(float[] data) {  //data includes radius value between 0 and 1 for polar graph
-        setAntennaPattern(data, 0xFF);
     }
 
     //r * cos(theta)

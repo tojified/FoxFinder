@@ -100,7 +100,7 @@ public class FoxFinderActivity extends Activity {
         if (patternHistory.size() > 0) {
             AntennaPatternView view = (AntennaPatternView) (findViewById(R.id.antenna_pattern));
             float[] patternData = getPatternData(mSamples, patternHistory.get(patternHistory.size()-1));
-            view.setAntennaPattern(patternData, 0xFF); //draw previous rotation
+            view.setAntennaPattern(patternData); //draw previous rotation
         }
         if (sample.isFirstSample()) {
             if (!mSamples.isEmpty()) patternHistory.add(mSamples);
