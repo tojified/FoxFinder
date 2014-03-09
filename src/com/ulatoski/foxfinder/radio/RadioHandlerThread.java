@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
-import com.ulatoski.foxfinder.radio.emulated.EmulatedBluetoothSocket;
+import com.ulatoski.foxfinder.radio.emulated.BluetoothSocket;
 
 /**
  * Radio handler thread.
@@ -47,7 +47,7 @@ public class RadioHandlerThread extends HandlerThread {
 	private final ExecutorService executorService;
 	private final Handler uiHandler;
 
-    EmulatedBluetoothSocket socket;
+    BluetoothSocket socket;
 
 	private RadioInputStream inputStream;
 

@@ -9,13 +9,13 @@
  * of the license agreement you entered into with Samsung Electronics.
  ********************************************************************************
  */
-package com.ulatoski.foxfinder.radio.emulated;
+package com.ulatoski.foxfinder.radio;
 
 import java.io.IOException;
 
 import android.os.Environment;
 import android.os.Handler;
-import com.ulatoski.foxfinder.radio.RadioHandlerThread;
+import com.ulatoski.foxfinder.radio.emulated.BluetoothSocket;
 
 /**
  * Client side handler thread.
@@ -35,7 +35,7 @@ public class EmulatedRadio extends RadioHandlerThread {
 	@Override
 	protected void onLooperPrepared() {
 		try {
-            socket = new EmulatedBluetoothSocket(Environment.getExternalStorageDirectory(), "RadioData.txt");
+            socket = new BluetoothSocket(Environment.getExternalStorageDirectory(), "RadioData.txt");
 		} catch (IOException e) {
 			close(socket);
             e.printStackTrace();

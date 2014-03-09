@@ -7,11 +7,11 @@ import java.net.Socket;
  * Created by tojified on 3/1/14. \
  * Emulates Radio data provided by bluetooth adapter by providing input and output streams
  */
-public class EmulatedBluetoothSocket extends Socket {
+public class BluetoothSocket extends Socket {
 
     DelayedFileInputStream sampleDataStream = null;
 
-    public EmulatedBluetoothSocket(File directory, String filename) throws IOException {
+    public BluetoothSocket(File directory, String filename) throws IOException {
         File dataFile = new File(directory, filename);
         connect(dataFile, 3);
     }
