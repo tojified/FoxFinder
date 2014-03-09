@@ -3,11 +3,7 @@ package com.ulatoski.foxfinder.activity;
 import android.content.Context;
 import android.graphics.*;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
-import com.ulatoski.foxfinder.model.RadioSample;
-
-import java.util.List;
 
 /**
  * Created by tojified on 3/8/14.
@@ -16,6 +12,7 @@ public class AntennaPatternView extends View {
 
     Paint mPaint;
     Path mPath;
+    float mLineWidth = 3.0f;
 
     public AntennaPatternView(Context context) {
         super(context);
@@ -38,7 +35,7 @@ public class AntennaPatternView extends View {
                 setColor(Color.WHITE);
                 setStyle(Style.STROKE);
                 setStrokeCap(Cap.ROUND);
-                setStrokeWidth(3.0f);
+                setStrokeWidth(mLineWidth);
                 setAntiAlias(true);
             }
         };
@@ -52,17 +49,17 @@ public class AntennaPatternView extends View {
 
     public void setAntennaPattern(float[] data) {  //data includes radius value between 0 and 1 for polar graph
         double interval = Math.toRadians(360) / data.length; //evenly spaced on polar grid
-        int w = getWidth();
-        int h = getHeight();
-        int s = (w < h) ? w : h; //scale for smaller dimension
+        int w = ( getWidth() - (int)mLineWidth ) / 2;
+        int h = ( getHeight() - (int)mLineWidth ) / 2;
+        int s = ( w < h ) ? w : h; //scale for smaller dimension
 
         mPath = new Path();
-        mPath.moveTo(getX(data[data.length-1] * s, interval * (data.length-1)) + w/2,
-                     getY(data[data.length-1] * s, interval * (data.length-1)) + h/2);
+        mPath.moveTo(getX(data[data.length-1] * s, interval * (data.length-1)) + w,
+                     getY(data[data.length-1] * s, interval * (data.length-1)) + h);
         for (int i = 0; i < data.length; i++) {
             float x = getX(data[i] * s, interval * i);
             float y = getY(data[i] * s, interval * i);
-            mPath.lineTo(x + w/2, y + h/2);
+            mPath.lineTo(x + w, y + h);
         }
         invalidate();
     }

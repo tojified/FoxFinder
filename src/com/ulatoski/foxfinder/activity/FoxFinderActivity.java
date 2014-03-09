@@ -110,7 +110,7 @@ public class FoxFinderActivity extends Activity {
     private float[] getPatternData(List<RadioSample> samples) {
         float[] data = new float[samples.size()];
         int idx = 0;
-        for (RadioSample sample: samples) {data[idx++] = (float) sample.getSMeter()/16;}
+        for (RadioSample sample: samples) {data[idx++] = (float) sample.getSMeter()/12;}
         return data;
     }
 
