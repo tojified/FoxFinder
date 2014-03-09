@@ -63,7 +63,6 @@ public class FoxFinderActivity extends Activity {
 		public void onReceive(Context context, Intent intent) {
 			int wifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
 
-			Log.e(MenuActivity.TAG, "" + wifiState);
 			if (wifiState == WifiManager.WIFI_STATE_DISABLING || wifiState == WifiManager.WIFI_STATE_DISABLED) {
 				onDisconnect();
 			}
