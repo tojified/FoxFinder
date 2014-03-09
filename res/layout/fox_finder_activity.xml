@@ -3,8 +3,12 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" xmlns:android="http://schemas.android.com/apk/res/android"
         android:baselineAligned="false" android:orientation="vertical">
-    <view android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          class="com.ulatoski.foxfinder.activity.AntennaPatternView" android:id="@+id/antenna_pattern"
-          android:layout_gravity="center_horizontal"/>
+    <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent">
+        <view android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              class="com.ulatoski.foxfinder.activity.AntennaPatternView" android:id="@+id/antenna_pattern"
+              android:layout_gravity="center_horizontal"/>
+    </RelativeLayout>
 </LinearLayout>

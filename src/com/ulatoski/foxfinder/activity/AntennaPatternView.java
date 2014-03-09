@@ -3,7 +3,6 @@ package com.ulatoski.foxfinder.activity;
 import android.content.Context;
 import android.graphics.*;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
 /**
