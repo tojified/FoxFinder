@@ -2,14 +2,13 @@ package com.ulatoski.foxfinder.radio;
 
 import java.io.*;
 
-import android.util.Log;
 import com.ulatoski.foxfinder.model.RadioSample;
 
 public class RadioInputStream extends DataInputStream {
 
     private InputStream stream;
 
-    public RadioInputStream(InputStream input) throws StreamCorruptedException, IOException {
+    public RadioInputStream(InputStream input) throws IOException {
         super(input);
         stream = input;
     }

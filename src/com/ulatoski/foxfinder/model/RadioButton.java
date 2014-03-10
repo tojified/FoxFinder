@@ -14,20 +14,20 @@ public class RadioButton {
     public static final int FUNC = 64;
     public static final int PWR  = 128; //??? or 1?
 
-    private int button_pressed = 0;
+    private int buttonPressed = 0;
 
     public RadioButton() {}
 
     public RadioButton(int value) {
-        button_pressed = value;
+        buttonPressed = value;
     }
 
     public int getValue() {
-        return button_pressed;
+        return buttonPressed;
     }
 
     public void setValue(int button_pressed) {
-        this.button_pressed = button_pressed;
+        this.buttonPressed = button_pressed;
     }
 
 }

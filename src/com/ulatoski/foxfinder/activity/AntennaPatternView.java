@@ -4,12 +4,8 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
 import android.graphics.*;
-import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 
 /**
  * Created by tojified on 3/8/14.
@@ -22,16 +18,6 @@ public class AntennaPatternView extends View {
 
     public AntennaPatternView(Context context) {
         super(context);
-        mPaint = createPaint();
-    }
-
-    public AntennaPatternView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        mPaint = createPaint();
-    }
-
-    public AntennaPatternView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
         mPaint = createPaint();
     }
 
@@ -48,8 +34,8 @@ public class AntennaPatternView extends View {
     }
 
     public void selfDestruct(int time) {
-        this.animate()
-            .alpha(0)
+        //noinspection ConstantConditions
+        this.animate().alpha(0)
             .setDuration(time)
             .setListener(new AnimatorListenerAdapter() {
                 @Override

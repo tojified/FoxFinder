@@ -8,12 +8,6 @@ public class RadioAttenuation {
     int[] steps = new int[] {20,20,20,10,5};  //should be ordered descending (reverse of binary value)
     int value = 0;
 
-    public RadioAttenuation(int attenuationValue) {
-        value = attenuationValue;
-    }
-
-    public RadioAttenuation() {}
-
     public void set(int attenuationValue) {
         value = attenuationValue;
     }
@@ -36,14 +30,6 @@ public class RadioAttenuation {
 
     private int setBit(int number, int bit) {  //zero based from the right
         return (number | (int) Math.pow(2,bit-1));
-    }
-
-    private int clearBit(int number, int bit) {  //zero based from the right
-        return (number & (int) Math.pow(2,bit-1));
-    }
-
-    public String getBinaryString() {
-        return Integer.toBinaryString(getBinary());
     }
 
 }

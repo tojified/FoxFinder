@@ -45,6 +45,4 @@ public class RadioOutputStream extends DataOutputStream {
         stream.write(button.getValue());
     }
 
-
-
 }

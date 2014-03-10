@@ -1,22 +1,8 @@
-/*
- ********************************************************************************
- * Copyright (c) 2012 Samsung Electronics, Inc.
- * All rights reserved.
- *
- * This software is a confidential and proprietary information of Samsung
- * Electronics, Inc. ("Confidential Information"). You shall not disclose such
- * Confidential Information and shall use it only in accordance with the terms
- * of the license agreement you entered into with Samsung Electronics.
- ********************************************************************************
- */
 package com.ulatoski.foxfinder.activity;
 
 import java.util.*;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.content.*;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -60,19 +46,6 @@ public class FoxFinderActivity extends Activity {
 		}
 	};
 
-	private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			int wifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
-
-			if (wifiState == WifiManager.WIFI_STATE_DISABLING || wifiState == WifiManager.WIFI_STATE_DISABLED) {
-				onDisconnect();
-			}
-		}
-	};
-
-
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -83,12 +56,10 @@ public class FoxFinderActivity extends Activity {
 
         mRadioHandlerThread = new EmulatedRadio(mUiHandler);
 		mRadioHandlerThread.start();
-		registerReceiver(broadcastReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
 	}
 
     @Override
 	protected void onDestroy() {
-		unregisterReceiver(broadcastReceiver);
 		mRadioHandlerThread.quit();
 		super.onDestroy();
 	}
@@ -108,9 +79,11 @@ public class FoxFinderActivity extends Activity {
                 mCurrentPattern.setAntennaPattern(getPatternData(mSamples));    //ensure historic pattern is accurate
                 mSamples = new ArrayList<RadioSample>();                        //and start with a fresh array
             }
-            if (mCurrentPattern != null) mCurrentPattern.selfDestruct(20000);
-            mCurrentPattern = new AntennaPatternView(mCurrentPattern.getContext());
-            mPatternGraph.addView(mCurrentPattern);
+            if (mCurrentPattern != null) {
+                mCurrentPattern.selfDestruct(20000);
+                mCurrentPattern = new AntennaPatternView(mCurrentPattern.getContext());
+                mPatternGraph.addView(mCurrentPattern);
+            }
         }
 
         if (mRadioSampleHistory.size() > 0) {                                    //if there is history, use it to complete the data
