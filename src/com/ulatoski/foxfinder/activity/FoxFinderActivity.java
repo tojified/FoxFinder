@@ -25,7 +25,6 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 import com.ulatoski.foxfinder.R;
 import com.ulatoski.foxfinder.model.RadioSample;
-import com.ulatoski.foxfinder.model.RadioSampleList;
 import com.ulatoski.foxfinder.radio.EmulatedRadio;
 import com.ulatoski.foxfinder.radio.RadioHandlerThread;
 
@@ -37,9 +36,9 @@ public class FoxFinderActivity extends Activity {
     private ViewGroup mPatternGraph;
     private AntennaPatternView mCurrentPattern;
 
-    private RadioSampleList mSamples = new RadioSampleList();
+    private List<RadioSample> mSamples = new ArrayList<RadioSample>();
     private List<AntennaPatternView> viewHistory = new ArrayList<AntennaPatternView>();
-    private List<RadioSampleList> radioSampleHistory = new ArrayList<RadioSampleList>();
+    private List<List<RadioSample>> radioSampleHistory = new ArrayList<List<RadioSample>>();
 
 
 	private final Handler.Callback mCallback = new Handler.Callback() {
@@ -110,7 +109,7 @@ public class FoxFinderActivity extends Activity {
                 radioSampleHistory.add(mSamples);
                 mCurrentPattern.setAntennaPattern(getPatternData(mSamples));    //ensure historic pattern has accurate sample count
                 viewHistory.add(mCurrentPattern);                               //unless it is the first rotation, store it!
-                mSamples = new RadioSampleList();                               //and start with a fresh array
+                mSamples = new ArrayList<RadioSample>();                               //and start with a fresh array
                 for (AntennaPatternView view : viewHistory) {
                      view.setAlpha(view.getAlpha()/4);
                 }
@@ -120,8 +119,8 @@ public class FoxFinderActivity extends Activity {
         }
 
         if (radioSampleHistory.size() > 0) {                                    //if there is history, use it to complete the data
-            RadioSampleList lastPatternData = radioSampleHistory.get(radioSampleHistory.size()-1);
-            mCurrentPattern.setAntennaPattern(getPatternData(lastPatternData.overlay(mSamples)));
+            List<RadioSample> lastPatternData = radioSampleHistory.get(radioSampleHistory.size()-1);
+            mCurrentPattern.setAntennaPattern(getPatternData(merge(mSamples, lastPatternData)));
         } else if (mSamples.size() > 0) {
             mCurrentPattern.setAntennaPattern(getPatternData(mSamples));        //otherwise just start drawing
         }
@@ -140,6 +139,15 @@ public class FoxFinderActivity extends Activity {
             }
         }
         return data;
+    }
+
+    private List<RadioSample> merge(List<RadioSample> freshData, List<RadioSample> oldData) {
+        int size = freshData.size() > oldData.size() ? freshData.size() : oldData.size();
+        List<RadioSample> list = new ArrayList<RadioSample>();
+        for (int i=0; i < size; i++) {
+            list.add(freshData.size() > i ? freshData.get(i) : oldData.get(i));
+        }
+        return list;
     }
 
 	/**
