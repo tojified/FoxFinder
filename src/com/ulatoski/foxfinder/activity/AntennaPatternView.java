@@ -1,9 +1,15 @@
 package com.ulatoski.foxfinder.activity;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
 import android.graphics.*;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 
 /**
  * Created by tojified on 3/8/14.
@@ -39,6 +45,23 @@ public class AntennaPatternView extends View {
                 setAntiAlias(true);
             }
         };
+    }
+
+    public void selfDestruct(int time) {
+        this.animate()
+            .alpha(0)
+            .setDuration(time)
+            .setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    removeSelf();
+                }
+            });
+    }
+
+    private void removeSelf() {
+        ViewGroup v = (ViewGroup) this.getParent();
+        if (v != null) v.removeView(this);
     }
 
     @Override

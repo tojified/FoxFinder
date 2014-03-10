@@ -37,9 +37,7 @@ public class FoxFinderActivity extends Activity {
     private AntennaPatternView mCurrentPattern;
 
     private List<RadioSample> mSamples = new ArrayList<RadioSample>();
-    private List<AntennaPatternView> mViewHistory = new ArrayList<AntennaPatternView>();
     private List<List<RadioSample>> mRadioSampleHistory = new ArrayList<List<RadioSample>>();
-
 
 	private final Handler.Callback mCallback = new Handler.Callback() {
 
@@ -107,13 +105,10 @@ public class FoxFinderActivity extends Activity {
         if (sample.isFirstSample()) {  //new rotation
             if (!mSamples.isEmpty()) {
                 mRadioSampleHistory.add(mSamples);
-                mCurrentPattern.setAntennaPattern(getPatternData(mSamples));    //ensure historic pattern has accurate sample count
-                mViewHistory.add(mCurrentPattern);                               //unless it is the first rotation, store it!
-                mSamples = new ArrayList<RadioSample>();                               //and start with a fresh array
-                for (AntennaPatternView view : mViewHistory) {
-                     view.setAlpha(view.getAlpha()/4);
-                }
+                mCurrentPattern.setAntennaPattern(getPatternData(mSamples));    //ensure historic pattern is accurate
+                mSamples = new ArrayList<RadioSample>();                        //and start with a fresh array
             }
+            if (mCurrentPattern != null) mCurrentPattern.selfDestruct(20000);
             mCurrentPattern = new AntennaPatternView(mCurrentPattern.getContext());
             mPatternGraph.addView(mCurrentPattern);
         }
