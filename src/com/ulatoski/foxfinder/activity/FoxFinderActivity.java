@@ -30,15 +30,15 @@ import com.ulatoski.foxfinder.radio.RadioHandlerThread;
 
 public class FoxFinderActivity extends Activity {
 
-	private RadioHandlerThread handlerThread;
+	private RadioHandlerThread mRadioHandlerThread;
     private boolean mDisconnect;
 
     private ViewGroup mPatternGraph;
     private AntennaPatternView mCurrentPattern;
 
     private List<RadioSample> mSamples = new ArrayList<RadioSample>();
-    private List<AntennaPatternView> viewHistory = new ArrayList<AntennaPatternView>();
-    private List<List<RadioSample>> radioSampleHistory = new ArrayList<List<RadioSample>>();
+    private List<AntennaPatternView> mViewHistory = new ArrayList<AntennaPatternView>();
+    private List<List<RadioSample>> mRadioSampleHistory = new ArrayList<List<RadioSample>>();
 
 
 	private final Handler.Callback mCallback = new Handler.Callback() {
@@ -83,15 +83,15 @@ public class FoxFinderActivity extends Activity {
         mCurrentPattern = new AntennaPatternView(this);
         Handler mUiHandler = new Handler(mCallback);
 
-        handlerThread = new EmulatedRadio(mUiHandler);
-		handlerThread.start();
+        mRadioHandlerThread = new EmulatedRadio(mUiHandler);
+		mRadioHandlerThread.start();
 		registerReceiver(broadcastReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
 	}
 
     @Override
 	protected void onDestroy() {
 		unregisterReceiver(broadcastReceiver);
-		handlerThread.quit();
+		mRadioHandlerThread.quit();
 		super.onDestroy();
 	}
 
@@ -106,11 +106,11 @@ public class FoxFinderActivity extends Activity {
 
         if (sample.isFirstSample()) {  //new rotation
             if (!mSamples.isEmpty()) {
-                radioSampleHistory.add(mSamples);
+                mRadioSampleHistory.add(mSamples);
                 mCurrentPattern.setAntennaPattern(getPatternData(mSamples));    //ensure historic pattern has accurate sample count
-                viewHistory.add(mCurrentPattern);                               //unless it is the first rotation, store it!
+                mViewHistory.add(mCurrentPattern);                               //unless it is the first rotation, store it!
                 mSamples = new ArrayList<RadioSample>();                               //and start with a fresh array
-                for (AntennaPatternView view : viewHistory) {
+                for (AntennaPatternView view : mViewHistory) {
                      view.setAlpha(view.getAlpha()/4);
                 }
             }
@@ -118,8 +118,8 @@ public class FoxFinderActivity extends Activity {
             mPatternGraph.addView(mCurrentPattern);
         }
 
-        if (radioSampleHistory.size() > 0) {                                    //if there is history, use it to complete the data
-            List<RadioSample> lastPatternData = radioSampleHistory.get(radioSampleHistory.size()-1);
+        if (mRadioSampleHistory.size() > 0) {                                    //if there is history, use it to complete the data
+            List<RadioSample> lastPatternData = mRadioSampleHistory.get(mRadioSampleHistory.size()-1);
             mCurrentPattern.setAntennaPattern(getPatternData(merge(mSamples, lastPatternData)));
         } else if (mSamples.size() > 0) {
             mCurrentPattern.setAntennaPattern(getPatternData(mSamples));        //otherwise just start drawing
