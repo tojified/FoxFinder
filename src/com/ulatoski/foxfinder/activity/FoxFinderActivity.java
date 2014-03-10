@@ -11,8 +11,7 @@
  */
 package com.ulatoski.foxfinder.activity;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -22,9 +21,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.ViewGroup;
 import android.widget.Toast;
 import com.ulatoski.foxfinder.R;
 import com.ulatoski.foxfinder.model.RadioSample;
+import com.ulatoski.foxfinder.model.RadioSampleList;
 import com.ulatoski.foxfinder.radio.EmulatedRadio;
 import com.ulatoski.foxfinder.radio.RadioHandlerThread;
 
@@ -33,8 +34,13 @@ public class FoxFinderActivity extends Activity {
 	private RadioHandlerThread handlerThread;
     private boolean mDisconnect;
 
-    private List<RadioSample> mSamples = new ArrayList<RadioSample>();
-    private List<List> patternHistory = new ArrayList<List>();
+    private ViewGroup mPatternGraph;
+    private AntennaPatternView mCurrentPattern;
+
+    private RadioSampleList mSamples = new RadioSampleList();
+    private List<AntennaPatternView> viewHistory = new ArrayList<AntennaPatternView>();
+    private List<RadioSampleList> radioSampleHistory = new ArrayList<RadioSampleList>();
+
 
 	private final Handler.Callback mCallback = new Handler.Callback() {
 
@@ -69,11 +75,13 @@ public class FoxFinderActivity extends Activity {
 		}
 	};
 
-	@Override
+
+    @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
         setContentView(R.layout.fox_finder_activity);
-
+        mPatternGraph = (ViewGroup) findViewById(R.id.pattern_graph);
+        mCurrentPattern = new AntennaPatternView(this);
         Handler mUiHandler = new Handler(mCallback);
 
         handlerThread = new EmulatedRadio(mUiHandler);
@@ -94,30 +102,40 @@ public class FoxFinderActivity extends Activity {
 		super.onBackPressed();
 	}
 
-    @SuppressWarnings("unchecked")
 	private void receiveSample(RadioSample sample) {
+        if (!sample.isQuality()) Log.w("RadioSample", "Bad data received! Freq:" + sample.getFrequency() + ", sMtr:" + sample.getSMeter());
 
-        if (patternHistory.size() > 0) {
-            AntennaPatternView view = (AntennaPatternView) (findViewById(R.id.antenna_pattern));
-            float[] patternData = getPatternData(mSamples, patternHistory.get(patternHistory.size()-1));
-            view.setAntennaPattern(patternData); //draw previous rotation
+        if (sample.isFirstSample()) {  //new rotation
+            if (!mSamples.isEmpty()) {
+                radioSampleHistory.add(mSamples);
+                mCurrentPattern.setAntennaPattern(getPatternData(mSamples));    //ensure historic pattern has accurate sample count
+                viewHistory.add(mCurrentPattern);                               //unless it is the first rotation, store it!
+                mSamples = new RadioSampleList();                               //and start with a fresh array
+                for (AntennaPatternView view : viewHistory) {
+                     view.setAlpha(view.getAlpha()/4);
+                }
+            }
+            mCurrentPattern = new AntennaPatternView(mCurrentPattern.getContext());
+            mPatternGraph.addView(mCurrentPattern);
         }
-        if (sample.isFirstSample()) {
-            if (!mSamples.isEmpty()) patternHistory.add(mSamples);
-            mSamples = new ArrayList<RadioSample>(); //new rotation
+
+        if (radioSampleHistory.size() > 0) {                                    //if there is history, use it to complete the data
+            RadioSampleList lastPatternData = radioSampleHistory.get(radioSampleHistory.size()-1);
+            mCurrentPattern.setAntennaPattern(getPatternData(lastPatternData.overlay(mSamples)));
+        } else if (mSamples.size() > 0) {
+            mCurrentPattern.setAntennaPattern(getPatternData(mSamples));        //otherwise just start drawing
         }
         mSamples.add(sample);
 	}
 
-    private float[] getPatternData(List<RadioSample> samples, List<RadioSample> lastRotation) {
-        int count = samples.size();
-        float[] data = count > lastRotation.size() ? new float[count] : new float[lastRotation.size()];
-        for (int i = 0; i < data.length; i++) {
-            RadioSample sample = i < count ? samples.get(i) : lastRotation.get(i);  //get the new if available
+    private float[] getPatternData(List<RadioSample> samples) {
+        float[] data = new float[samples.size()];
+        for (int i=0; i < data.length; i++) {
+            RadioSample sample = samples.get(i);
             if (sample.isQuality()) {
                 data[i] = (float) sample.getSMeter()/12;
-            } else {
-                data[i] = (float) lastRotation.get(i).getSMeter()/12;
+            } else if (i > 0) {
+                data[i] = data[i-1];
                 Log.w("RadioSample", "Bad data received! Freq:" + sample.getFrequency() + ", sMtr:" + sample.getSMeter());
             }
         }

@@ -4,6 +4,10 @@ import android.content.Context;
 import android.graphics.*;
 import android.util.AttributeSet;
 import android.view.View;
+import com.ulatoski.foxfinder.model.RadioSample;
+import com.ulatoski.foxfinder.model.RadioSampleList;
+
+import java.util.List;
 
 /**
  * Created by tojified on 3/8/14.

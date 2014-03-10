@@ -2,6 +2,7 @@ package com.ulatoski.foxfinder.model;
 
 public class RadioSample {
 
+    public static final int MAX_S_MTR = 12;
     private String frequency = "";
     private int sMeter = 0;
     private boolean firstSample = true;
@@ -42,7 +43,7 @@ public class RadioSample {
     }
 
     private void verify(int sMeter) throws IllegalArgumentException {
-        if (sMeter < 0 || sMeter > 16) badData = true;
+        if (sMeter < 0 || sMeter > MAX_S_MTR) badData = true;
     }
 
 }
