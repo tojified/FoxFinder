@@ -57,9 +57,9 @@ public class AntennaPatternView extends View {
 
     public void setAntennaPattern(float[] data) {  //data includes radius value between 0 and 1 for polar graph
         double interval = Math.toRadians(360) / data.length; //evenly spaced on polar grid
-        int w = ( getWidth() - (int)mLineWidth ) / 2;
-        int h = ( getHeight() - (int)mLineWidth ) / 2;
-        int s = ( w < h ) ? w : h; //scale for smaller dimension
+        int w = ( getWidth() ) / 2;
+        int h = ( getHeight() ) / 2;
+        int s = ( w < h ) ? w - (int)mLineWidth : h - (int)mLineWidth; //scale for smaller dimension
 
         mPath.reset();
         mPath.moveTo(getX(data[data.length-1] * s, interval * (data.length-1)) + w,
