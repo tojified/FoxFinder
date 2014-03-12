@@ -23,7 +23,7 @@ public class FoxFinderActivity extends Activity {
     private AntennaPatternView mCurrentPattern;
 
     private List<RadioSample> mSamples = new ArrayList<RadioSample>();
-    private List<List<RadioSample>> mRadioSampleHistory = new ArrayList<List<RadioSample>>();
+    private List<RadioSample> mPrevRotation = mSamples;
 
 	private final Handler.Callback mCallback = new Handler.Callback() {
 
@@ -74,26 +74,23 @@ public class FoxFinderActivity extends Activity {
         if (!sample.isQuality()) Log.w("RadioSample", "Bad data received! Freq:" + sample.getFrequency() + ", sMtr:" + sample.getSMeter());
 
         if (sample.isFirstSample()) {  //new rotation
-            if (!mSamples.isEmpty()) {
-                mRadioSampleHistory.add(mSamples);
-                mCurrentPattern.setAntennaPattern(getPatternData(mSamples));    //ensure historic pattern is accurate
-                mSamples = new ArrayList<RadioSample>();                        //and start with a fresh array
-            }
-            if (mCurrentPattern != null) {
-                mCurrentPattern.selfDestruct(20000);
-                mCurrentPattern = new AntennaPatternView(mCurrentPattern.getContext());
-                mPatternGraph.addView(mCurrentPattern);
-            }
+            mSamples = new ArrayList<RadioSample>();
+            nextPattern();
         }
 
-        if (mRadioSampleHistory.size() > 0) {                                    //if there is history, use it to complete the data
-            List<RadioSample> lastPatternData = mRadioSampleHistory.get(mRadioSampleHistory.size()-1);
-            mCurrentPattern.setAntennaPattern(getPatternData(merge(mSamples, lastPatternData)));
-        } else if (mSamples.size() > 0) {
-            mCurrentPattern.setAntennaPattern(getPatternData(mSamples));        //otherwise just start drawing
-        }
         mSamples.add(sample);
+        mCurrentPattern.setAntennaPattern(getPatternData(mSamples), getInterval(mPrevRotation));
 	}
+
+    private void nextPattern() {
+        mCurrentPattern.selfDestruct(20000);
+        mCurrentPattern = new AntennaPatternView(mCurrentPattern.getContext());
+        mPatternGraph.addView(mCurrentPattern);
+    }
+
+    private double getInterval(List<RadioSample> samples) {
+        return Math.toRadians(360) / samples.size(); //evenly spaced on polar grid
+    }
 
     private float[] getPatternData(List<RadioSample> samples) {
         float[] data = new float[samples.size()];
@@ -107,15 +104,6 @@ public class FoxFinderActivity extends Activity {
             }
         }
         return data;
-    }
-
-    private List<RadioSample> merge(List<RadioSample> freshData, List<RadioSample> oldData) {
-        int size = freshData.size() > oldData.size() ? freshData.size() : oldData.size();
-        List<RadioSample> list = new ArrayList<RadioSample>();
-        for (int i=0; i < size; i++) {
-            list.add(freshData.size() > i ? freshData.get(i) : oldData.get(i));
-        }
-        return list;
     }
 
 	/**
