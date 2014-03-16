@@ -48,6 +48,9 @@ int main(void)
 {
     BYTE  b;
 
+    mPORTAClearBits(BIT_0);
+    mPORTASetPinsDigitalIn(BIT_0);
+
     #if defined (__32MX250F128B__)
     PPSInput(2,U2RX,RPB5); // Assign RPB5 as input pin for U2RX
     PPSOutput(4,RPB0,U2TX); // Set RPB0 pin as output for U2TX
@@ -121,6 +124,5 @@ BYTE RxByte(void)
 // *****************************************************************************
 int IsZeroIndex()
 {
-    //todo: check if pin designated to zero index is high
-    return 1;
+    return mPORTAReadBits();
 }
