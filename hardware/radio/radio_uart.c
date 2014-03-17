@@ -34,7 +34,9 @@
 #define	GetPeripheralClock()		(SYS_FREQ/(1 << OSCCONbits.PBDIV))
 #define	GetInstructionClock()		(SYS_FREQ)
 
-#define UART_MODULE_ID UART2 // PIM is connected through UART2 module
+
+#define UART_TABLET UART1 // Tablet is connected through UART1 module
+#define UART_RADIO  UART2 // Radio is connected through UART2 module
 #endif
 
 // Function Prototypes
@@ -43,49 +45,49 @@ BYTE RxByte(void);
 int IsZeroIndex();
 
 const BYTE ZERO_INDEX = 0xF0;
+const BYTE MIN_BPR = 100;     //Minimum bytes per rotation
+BOOL zeroIndexFlag = MIN_BPR;
 
 int main(void)
 {
     BYTE  b;
 
-    mPORTAClearBits(BIT_0);
-    mPORTASetPinsDigitalIn(BIT_0);
+    mPORTASetPinsDigitalOut();      //Set Attinuator Port Direction
+    mPORTAWrite(0);
+    mPORTBSetPinsDigitalIn(BIT_14); //Set ZeroIndex Pin
 
-    #if defined (__32MX250F128B__)
-    PPSInput(2,U2RX,RPB5); // Assign RPB5 as input pin for U2RX
-    PPSOutput(4,RPB0,U2TX); // Set RPB0 pin as output for U2TX
-    //#elif defined (__32MX430F064L__) || (__32MX450F256L__) || (__32MX470F512L__)
-    //PPSInput(2,U1RX,RPF4); // Assign RPF4 as input pin for U1RX
-    //PPSOutput(2,RPF5,U1TX); // Set RPF5 pin as output for U1TX
-    #endif
 
-    UARTConfigure(UART_MODULE_ID, UART_ENABLE_PINS_TX_RX_ONLY);
-    UARTSetFifoMode(UART_MODULE_ID, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
-    UARTSetLineControl(UART_MODULE_ID, UART_DATA_SIZE_8_BITS | UART_PARITY_NONE | UART_STOP_BITS_1);
-    UARTSetDataRate(UART_MODULE_ID, GetPeripheralClock(), 9600);
-    UARTEnable(UART_MODULE_ID, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
+    //Assign UART Programmable Pins
+    PPSInput(2,U1RX,RPB8);
+    PPSOutput(4,RPB9,U1TX);
+    PPSInput(2,URX,RPB8);
+    PPSOutput(4,RPB9,U2TX);
+
+    UARTConfigure(UART_TABLET, UART_ENABLE_PINS_TX_RX_ONLY);
+    UARTSetFifoMode(UART_TABLET, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
+    UARTSetLineControl(UART_TABLET, UART_DATA_SIZE_8_BITS | UART_PARITY_NONE | UART_STOP_BITS_1);
+    UARTSetDataRate(UART_TABLET, GetPeripheralClock(), 9600);
+    UARTEnable(UART_TABLET, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
+
+    UARTConfigure(UART_RADIO, UART_ENABLE_PINS_TX_RX_ONLY);
+    UARTSetFifoMode(UART_RADIO, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
+    UARTSetLineControl(UART_RADIO, UART_DATA_SIZE_8_BITS | UART_PARITY_NONE | UART_STOP_BITS_1);
+    UARTSetDataRate(UART_RADIO, GetPeripheralClock(), 9600);
+    UARTEnable(UART_RADIO, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
+
+    int c = MIN_BPR; //counter used to ensure only one zeroIndex per rotation;
 
     while(1)
     {
-        b = RxByte();
-
-        switch(b)
-        {
-        case 0x10:
-            BYTE header_byte = RxByte();
-            if (header_byte == 0xFF && IsZeroIndex())
-            {
-                TxByte(ZERO_INDEX);
-            }
-            else
-            {
-                TxByte(header_byte);
-            }
-            break;
-
-        default:
-            TxByte(b);
+        if (mPORTBReadBits(BIT_14) && c <= 0) {  //one index per rotation
+            zeroIndexFlag = TRUE;
+            c = MIN_BPR;
         }
+        if (!UARTReceivedDataIsAvailable(UART_TABLET)) handleTabletInput;
+        
+        b = PassRadioByte();
+        if (zeroIndexFlag && b == 0x10) handleIndex();
+        if (c > 0) c--;
     }
 
     return -1;
@@ -95,34 +97,87 @@ int main(void)
 // *****************************************************************************
 // void TxByte(UINT32 byte)
 // *****************************************************************************
-void TxByte(BYTE b)
+void TxRadioByte(BYTE b)
 {
-    while(!UARTTransmitterIsReady(UART_MODULE_ID));
+    while(!UARTTransmitterIsReady(UART_TABLET));
 
-    UARTSendDataByte(UART_MODULE_ID, b);
+    UARTSendDataByte(UART_TABLET, b);
 
-    while(!UARTTransmissionHasCompleted(UART_MODULE_ID));
+    while(!UARTTransmissionHasCompleted(UART_TABLET));
 }
 
 // *****************************************************************************
-// UINT32 GetByte(void)
+// BYTE RxByte(void)
 // *****************************************************************************
-BYTE RxByte(void)
+BYTE RxRadioByte(void)
 {
-    BYTE  b;
+    while(!UARTReceivedDataIsAvailable(UART_RADIO)); //idle loop
 
-    while(!UARTReceivedDataIsAvailable(UART_MODULE_ID)); //idle loop
+    return UARTGetDataByte(UART_RADIO);
+}
 
-    b = UARTGetDataByte(UART_MODULE_ID);
-    b -= '0';
-
+BYTE PassRadioByte(BYTE b)
+{
+    b = RxByte();
+    TxByte(b);
     return b;
 }
 
 // *****************************************************************************
-// UINT32 IsIndex(void)
+// void SetAttenuation(BYTE)
 // *****************************************************************************
-int IsZeroIndex()
+int SetAttenuation(BYTE b)
 {
-    return mPORTAReadBits();
+    return mPORTAWrite(b);
+}
+
+// *****************************************************************************
+// void PressButton(BYTE)
+// *****************************************************************************
+void PressButton(BYTE b)
+{
+    int c = 16; //one cycle
+    while(!UARTTransmitterIsReady(UART_RADIO));
+    while((PassRadioByte || PassRadioByte) && c) { c--; }; //until 00 00 or c=0
+
+    //todo: pause 660us
+    
+    UARTSendDataByte(UART_RADIO, b);
+
+    while(!UARTTransmissionHasCompleted(UART_RADIO));
+}
+
+void handleIndex()
+{
+    BYTE header_byte = RxByte();
+    if (header_byte == 0xFF)
+    {
+        TxByte(ZERO_INDEX);
+        zeroIndexFlag = FALSE;
+    }
+    else
+    {
+        TxByte(header_byte);
+    }
+}
+
+void handleTabletInput() {
+
+    switch(UARTGetDataByte(UART_TABLET))
+    {
+        case 'A':
+            if (!UARTReceivedDataIsAvailable(UART_RADIO))
+            {
+                SetAttenuation(UARTGetDataByte(UART_TABLET));
+            }
+            break;
+        case 'B':
+            if (!UARTReceivedDataIsAvailable(UART_RADIO))
+            {
+                PressButton(UARTGetDataByte(UART_TABLET));
+            }
+            break;
+    }
+
+    while (!UARTReceivedDataIsAvailable(UART_RADIO)) { UARTGetDataByte(UART_TABLET); }
 }
