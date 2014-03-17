@@ -37,31 +37,37 @@
 
 #define UART_TABLET UART1 // Tablet is connected through UART1 module
 #define UART_RADIO  UART2 // Radio is connected through UART2 module
-#endif
 
 // Function Prototypes
-void TxByte(BYTE b);
-BYTE RxByte(void);
-int IsZeroIndex();
+BYTE ReadRadio(void);
+void WriteTablet(BYTE b);
+BYTE PassData(void);
+BOOL IsDoubleZero(void);
 
-const BYTE ZERO_INDEX = 0xF0;
-const BYTE MIN_BPR = 100;     //Minimum bytes per rotation
-BOOL zeroIndexFlag = MIN_BPR;
+BOOL IsIndex(void);
+void SetAttenuation(BYTE b);
+void SendButtonPress(BYTE b);
+
+void ReadTablet(void);
+void WriteIndex(void);
+
+const BYTE MIN_BPR = 500;   //Minimum bytes per rotation
+int indexOff = MIN_BPR;     //decremented counter ensurse only one zeroIndex;
+BOOL zeroIndexFlag = FALSE;
+
+BYTE TabletCommand = 0;
 
 int main(void)
 {
-    BYTE  b;
-
     mPORTASetPinsDigitalOut();      //Set Attinuator Port Direction
     mPORTAWrite(0);
-    mPORTBSetPinsDigitalIn(BIT_14); //Set ZeroIndex Pin
-
+    mPORTBSetPinsDigitalIn(BIT_14); //Set ZeroIndex (RB14 - Pin 25)
 
     //Assign UART Programmable Pins
-    PPSInput(2,U1RX,RPB8);
-    PPSOutput(4,RPB9,U1TX);
-    PPSInput(2,URX,RPB8);
-    PPSOutput(4,RPB9,U2TX);
+    PPSInput(3,U1RX,RPB13);  //Pin 24
+    PPSOutput(1,RPB15,U1TX); //Pin 26
+    PPSInput(2,U2RX,RPB8);   //Pin 17 (+5v tollerant)
+    PPSOutput(4,RPB9,U2TX);  //Pin 18 (+5v tollerant)
 
     UARTConfigure(UART_TABLET, UART_ENABLE_PINS_TX_RX_ONLY);
     UARTSetFifoMode(UART_TABLET, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
@@ -75,29 +81,26 @@ int main(void)
     UARTSetDataRate(UART_RADIO, GetPeripheralClock(), 9600);
     UARTEnable(UART_RADIO, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
 
-    int c = MIN_BPR; //counter used to ensure only one zeroIndex per rotation;
-
     while(1)
     {
-        if (mPORTBReadBits(BIT_14) && c <= 0) {  //one index per rotation
-            zeroIndexFlag = TRUE;
-            c = MIN_BPR;
-        }
-        if (!UARTReceivedDataIsAvailable(UART_TABLET)) handleTabletInput;
+        if (!UARTReceivedDataIsAvailable(UART_TABLET)) ReadTablet();
         
-        b = PassRadioByte();
-        if (zeroIndexFlag && b == 0x10) handleIndex();
-        if (c > 0) c--;
+        if (IsIndex())
+        {
+            zeroIndexFlag = TRUE;
+            indexOff = MIN_BPR;
+        }
+
+        if (zeroIndexFlag && PassData() == 0x10) WriteIndex(); //Passess
     }
 
     return -1;
 }
 
-
 // *****************************************************************************
-// void TxByte(UINT32 byte)
+// void WriteTablet(BYTE byte)
 // *****************************************************************************
-void TxRadioByte(BYTE b)
+void WriteTablet(BYTE b)
 {
     while(!UARTTransmitterIsReady(UART_TABLET));
 
@@ -107,77 +110,118 @@ void TxRadioByte(BYTE b)
 }
 
 // *****************************************************************************
-// BYTE RxByte(void)
+// BYTE ReadRadio(void)
 // *****************************************************************************
-BYTE RxRadioByte(void)
+BYTE ReadRadio(void)
 {
-    while(!UARTReceivedDataIsAvailable(UART_RADIO)); //idle loop
+    while(!UARTReceivedDataIsAvailable(UART_RADIO)); //idle loop - block until data
 
     return UARTGetDataByte(UART_RADIO);
 }
 
-BYTE PassRadioByte(BYTE b)
+// *****************************************************************************
+// BYTE PassData(void)
+// *****************************************************************************
+BYTE PassData(void)
 {
-    b = RxByte();
-    TxByte(b);
+    BYTE b = ReadRadio();
+    WriteTablet(b);
     return b;
+}
+
+// *****************************************************************************
+// BOOL IsDoubleZero(void)
+// *****************************************************************************
+BOOL IsDoubleZero(void)
+{
+    PassData == 0 && PassData == 0;
+}
+
+// *****************************************************************************
+// BOOL IsIndex(void)
+// *****************************************************************************
+BOOL IsIndex(void)
+{
+    if (indexOff > 0)
+    {
+        indexOff--;
+        return FALSE;
+    }
+    else
+    {
+        return mPORTBReadBits(BIT_14);
+    }
 }
 
 // *****************************************************************************
 // void SetAttenuation(BYTE)
 // *****************************************************************************
-int SetAttenuation(BYTE b)
+void SetAttenuation(BYTE b)
 {
-    return mPORTAWrite(b);
+    mPORTAWrite(b);
 }
 
 // *****************************************************************************
-// void PressButton(BYTE)
+// void SendButtonPress(BYTE)
 // *****************************************************************************
-void PressButton(BYTE b)
+void SendButtonPress(BYTE b)
 {
-    int c = 16; //one cycle
-    while(!UARTTransmitterIsReady(UART_RADIO));
-    while((PassRadioByte || PassRadioByte) && c) { c--; }; //until 00 00 or c=0
+    while(!UARTTransmitterIsReady(UART_RADIO)); //transmitter ready
+    while(!IsDoubleZero())                      //block until 00 00
 
-    //todo: pause 660us
+    Delay(600);  //wait atleast 600us
     
     UARTSendDataByte(UART_RADIO, b);
 
     while(!UARTTransmissionHasCompleted(UART_RADIO));
 }
 
-void handleIndex()
+// *****************************************************************************
+// void ReadTablet(void)
+// *****************************************************************************
+void ReadTablet(void) {
+
+    if (TabletCommand)
+    {
+        switch(TabletCommand)
+        {
+            case 'A':
+                SetAttenuation(UARTGetDataByte(UART_TABLET));
+                break;
+            case 'B':
+                SendButtonPress(UARTGetDataByte(UART_TABLET));
+                break;
+        }
+        TabletCommand = 0;
+    }
+    else
+    {
+        TabletCommand = UARTGetDataByte(UART_TABLET);
+    }
+}
+
+// *****************************************************************************
+// void WriteIndex(void)
+// *****************************************************************************
+void WriteIndex(void)
 {
-    BYTE header_byte = RxByte();
+    BYTE header_byte = ReadRadio();
     if (header_byte == 0xFF)
     {
-        TxByte(ZERO_INDEX);
+        WriteTablet(0xF0);
         zeroIndexFlag = FALSE;
     }
     else
     {
-        TxByte(header_byte);
+        WriteTablet(header_byte);
     }
 }
 
-void handleTabletInput() {
-
-    switch(UARTGetDataByte(UART_TABLET))
-    {
-        case 'A':
-            if (!UARTReceivedDataIsAvailable(UART_RADIO))
-            {
-                SetAttenuation(UARTGetDataByte(UART_TABLET));
-            }
-            break;
-        case 'B':
-            if (!UARTReceivedDataIsAvailable(UART_RADIO))
-            {
-                PressButton(UARTGetDataByte(UART_TABLET));
-            }
-            break;
-    }
-
-    while (!UARTReceivedDataIsAvailable(UART_RADIO)) { UARTGetDataByte(UART_TABLET); }
+void Delay(DWORD dwCount)
+{
+    UINT countPerMicroSec = GetPeripheralClock()/100;
+    UINT backupCount;
+    backupCount = ReadCoreTimer();
+    dwCount *= countPerMicroSec;
+    while( (ReadCoreTimer() - backupCount) < dwCount );
 }
