@@ -34,7 +34,6 @@
 #define	GetPeripheralClock()		(SYS_FREQ/(1 << OSCCONbits.PBDIV))
 #define	GetInstructionClock()		(SYS_FREQ)
 
-
 #define UART_TABLET UART1 // Tablet is connected through UART1 module
 #define UART_RADIO  UART2 // Radio is connected through UART2 module
 
@@ -51,17 +50,19 @@ void SendButtonPress(BYTE b);
 void ReadTablet(void);
 void WriteIndex(void);
 
-const BYTE MIN_BPR = 500;   //Minimum bytes per rotation
-int indexOff = MIN_BPR;     //decremented counter ensurse only one zeroIndex;
-BOOL zeroIndexFlag = FALSE;
+void Delay(DWORD);
+
+const UINT32 MIN_BPR = 500;   //Minimum bytes per rotation
+UINT32 indexOff;              //decremented counter ensurse only one zeroIndex;
+BOOL zeroIndexFlag;
 
 BYTE TabletCommand = 0;
 
 int main(void)
 {
-    mPORTASetPinsDigitalOut();      //Set Attinuator Port Direction
-    mPORTAWrite(0);
-    mPORTBSetPinsDigitalIn(BIT_14); //Set ZeroIndex (RB14 - Pin 25)
+    mPORTADirection(0);                       //Set Attinuator Port as Output
+    mPORTAWrite(0);                           //Port Bits Low
+    mPORTBSetPinsDigitalIn(BIT_14);           //Set ZeroIndex (RB14 - Pin 25)
 
     //Assign UART Programmable Pins
     PPSInput(3,U1RX,RPB13);  //Pin 24
@@ -81,6 +82,9 @@ int main(void)
     UARTSetDataRate(UART_RADIO, GetPeripheralClock(), 9600);
     UARTEnable(UART_RADIO, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
 
+    indexOff = MIN_BPR;
+    zeroIndexFlag = FALSE;
+    
     while(1)
     {
         if (!UARTReceivedDataIsAvailable(UART_TABLET)) ReadTablet();
