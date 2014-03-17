@@ -28,7 +28,8 @@
 // Other options are don't care
 #pragma config FPLLMUL = MUL_24, FPLLIDIV = DIV_2, FPLLODIV = DIV_2, FWDTEN = OFF
 #pragma config POSCMOD = HS, FNOSC = PRIPLL, FPBDIV = DIV_1
-#define SYS_FREQ (48000000L)
+#define SYS_FREQ (18432000ul)
+
 #endif
 
 #define	GetPeripheralClock()		(SYS_FREQ/(1 << OSCCONbits.PBDIV))
@@ -50,7 +51,7 @@ void SendButtonPress(BYTE b);
 void ReadTablet(void);
 void WriteIndex(void);
 
-void Delay(DWORD);
+void DelayMs(DWORD);
 
 const UINT32 MIN_BPR = 500;   //Minimum bytes per rotation
 UINT32 indexOff;              //decremented counter ensurse only one zeroIndex;
@@ -73,20 +74,23 @@ int main(void)
     UARTConfigure(UART_TABLET, UART_ENABLE_PINS_TX_RX_ONLY);
     UARTSetFifoMode(UART_TABLET, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
     UARTSetLineControl(UART_TABLET, UART_DATA_SIZE_8_BITS | UART_PARITY_NONE | UART_STOP_BITS_1);
-    UARTSetDataRate(UART_TABLET, GetPeripheralClock(), 9600);
+    //UARTSetDataRate(UART_TABLET, GetPeripheralClock(), 9600);
+    UARTSetDataRate(UART_TABLET, SYS_FREQ * 0.44, 9600);
     UARTEnable(UART_TABLET, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
 
     UARTConfigure(UART_RADIO, UART_ENABLE_PINS_TX_RX_ONLY);
     UARTSetFifoMode(UART_RADIO, UART_INTERRUPT_ON_TX_NOT_FULL | UART_INTERRUPT_ON_RX_NOT_EMPTY);
     UARTSetLineControl(UART_RADIO, UART_DATA_SIZE_8_BITS | UART_PARITY_NONE | UART_STOP_BITS_1);
-    UARTSetDataRate(UART_RADIO, GetPeripheralClock(), 9600);
+    //UARTSetDataRate(UART_RADIO, GetPeripheralClock(), 9600);
+    UARTSetDataRate(UART_RADIO, SYS_FREQ * 0.44, 9600);
     UARTEnable(UART_RADIO, UART_ENABLE_FLAGS(UART_PERIPHERAL | UART_RX | UART_TX));
 
     indexOff = MIN_BPR;
     zeroIndexFlag = FALSE;
-    
+
     while(1)
     {
+        
         if (!UARTReceivedDataIsAvailable(UART_TABLET)) ReadTablet();
         
         if (IsIndex())
@@ -95,7 +99,7 @@ int main(void)
             indexOff = MIN_BPR;
         }
 
-        if (zeroIndexFlag && PassData() == 0x10) WriteIndex(); //Passess
+        if (zeroIndexFlag && PassData() == 0x10) WriteIndex(); //Pass on data
     }
 
     return -1;
@@ -173,7 +177,7 @@ void SendButtonPress(BYTE b)
     while(!UARTTransmitterIsReady(UART_RADIO)); //transmitter ready
     while(!IsDoubleZero())                      //block until 00 00
 
-    Delay(600);  //wait atleast 600us
+    DelayMs(1);  //wait atleast 600us
     
     UARTSendDataByte(UART_RADIO, b);
 
@@ -221,9 +225,9 @@ void WriteIndex(void)
     }
 }
 
-void Delay(DWORD dwCount)
+void DelayMs(DWORD dwCount)
 {
-    UINT countPerMicroSec = GetPeripheralClock()/100;
+    UINT countPerMicroSec = GetPeripheralClock()/4300;
     UINT backupCount;
     backupCount = ReadCoreTimer();
     dwCount *= countPerMicroSec;
