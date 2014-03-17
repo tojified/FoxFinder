@@ -2,14 +2,13 @@ package com.ulatoski.foxfinder.radio;
 
 import java.io.*;
 
-import android.util.Log;
 import com.ulatoski.foxfinder.model.RadioSample;
 
 public class RadioInputStream extends DataInputStream {
 
     private InputStream stream;
 
-    public RadioInputStream(InputStream input) throws StreamCorruptedException, IOException {
+    public RadioInputStream(InputStream input) throws IOException {
         super(input);
         stream = input;
     }
@@ -45,11 +44,7 @@ public class RadioInputStream extends DataInputStream {
             int sMtr = stream.read();
             if (sMtr > 0x40) sMtr = sMtr - 0x40;
 
-            try {
-                return new RadioSample(freq.toString(), sMtr, indexByte == 0xF0);
-            } catch (IllegalArgumentException ex) {
-                Log.e("RadioSample", "Bad data received! Freq:" + freq.toString() + ", sMtr:" + sMtr);
-            }
+            return new RadioSample(freq.toString(), sMtr, indexByte == 0xF0);
         }
         return null;
     }
